@@ -2,41 +2,47 @@ import librosa
 import soundfile as sf
 import numpy as np
 
-TARGET_SR = 44100
+from app.services.analysis import analyze_track
+from app.services.vocals import vocal_activity
+from app.services.loudness import normalize_lufs
 
-def load_audio(path):
-    y, sr = librosa.load(path, sr=TARGET_SR, mono=True)
-    return y, sr
+SR = 44100
 
-def match_bpm(y, sr, target_bpm):
-    bpm, _ = librosa.beat.beat_track(y=y, sr=sr)
-    rate = bpm / target_bpm if bpm > 0 else 1.0
-    return librosa.effects.time_stretch(y, rate)
+def load(path):
+    return librosa.load(path, sr=SR, mono=True)
 
-def mix_tracks(track_paths, output_path):
-    mixed = None
-    target_bpm = None
+def mix_tracks(paths, output_path):
+    final_audio = None
+    base_bpm = None
 
-    for i, path in enumerate(track_paths):
-        y, sr = load_audio(path)
-        bpm, _ = librosa.beat.beat_track(y=y, sr=sr)
+    for i, path in enumerate(paths):
+        y, sr = load(path)
+        meta = analyze_track(path)
 
         if i == 0:
-            target_bpm = bpm
-            mixed = y
-        else:
-            y = match_bpm(y, sr, target_bpm)
+            base_bpm = meta["bpm"]
+            final_audio = y
+            continue
 
-            # 8-second DJ-style overlap
-            fade_len = 8 * sr
-            fade_len = min(fade_len, len(mixed), len(y))
+        # BPM match
+        stretch_rate = meta["bpm"] / base_bpm
+        y = librosa.effects.time_stretch(y, stretch_rate)
 
-            fade_out = np.linspace(1, 0, fade_len)
-            fade_in = np.linspace(0, 1, fade_len)
+        # Phrase-locked transition
+        fade_len = int(meta["phrase_length"] * sr)
+        fade_len = min(fade_len, len(final_audio), len(y))
 
-            mixed[-fade_len:] = mixed[-fade_len:] * fade_out
-            y[:fade_len] = y[:fade_len] * fade_in
+        fade_out = np.linspace(1, 0, fade_len)
+        fade_in = np.linspace(0, 1, fade_len)
 
-            mixed = np.concatenate([mixed, y])
+        # Vocal safety
+        if vocal_activity(final_audio[-fade_len:]):
+            fade_len = int(fade_len * 0.5)
 
-    sf.write(output_path, mixed, TARGET_SR)
+        final_audio[-fade_len:] *= fade_out
+        y[:fade_len] *= fade_in
+
+        final_audio = np.concatenate([final_audio, y])
+
+    final_audio = normalize_lufs(final_audio, SR)
+    sf.write(output_path, final_audio, SR)

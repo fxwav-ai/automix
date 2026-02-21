@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+librosa
+essentia
+pyloudnorm
+soundfile
+numpy
+ffmpeg-python
+python-multipart

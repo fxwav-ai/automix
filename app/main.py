@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from app.api.routes import router
 from fastapi.middleware.cors import CORSMiddleware
 
+app = FastAPI(title="AutoMix API", version="1.0")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # later restrict to Lovable domain
@@ -9,8 +11,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app = FastAPI(title="AutoMix API", version="1.0")
 
 app.include_router(router)
 

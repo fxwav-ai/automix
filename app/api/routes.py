@@ -2,9 +2,19 @@ from fastapi import APIRouter, UploadFile, File
 from app.services.storage import save_file
 from app.services.jobs import create_job, get_job
 from fastapi.responses import FileResponse
+from app.services.analysis import analyze_track
+
 import uuid
 
 router = APIRouter()
+
+@router.post("/analyze")
+async def analyze(file: UploadFile = File(...)):
+    path = await save_file(file)
+
+    result = analyze_track(path)
+
+    return result
 
 @router.post("/upload")
 async def upload_tracks(files: list[UploadFile] = File(...)):

@@ -1,7 +1,6 @@
 fastapi
 uvicorn
 librosa
-essentia
 pyloudnorm
 soundfile
 numpy

@@ -1,24 +1,29 @@
-import essentia.standard as es
+import librosa
 import numpy as np
 
 def analyze_track(path):
-    loader = es.MonoLoader(filename=path)
-    audio = loader()
+    y, sr = librosa.load(path, sr=None)
 
-    rhythm = es.RhythmExtractor2013(method="multifeature")
-    bpm, beats, _, _, _ = rhythm(audio)
+    # BPM detection
+    tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
 
-    loudness = es.LoudnessEBUR128()(audio)
-    energy = np.mean(audio ** 2)
+    # RMS energy
+    rms = librosa.feature.rms(y=y)
+    energy = float(np.mean(rms))
 
-    # Phrase boundaries (approx every 8 bars)
-    seconds_per_beat = 60 / bpm
-    phrase_length = seconds_per_beat * 32  # 32 beats = 8 bars (4/4)
+    # Beat times in seconds
+    beat_times = librosa.frames_to_time(beats, sr=sr).tolist()
+
+    # Phrase length (8 bars in 4/4)
+    seconds_per_beat = 60 / tempo
+    phrase_length = seconds_per_beat * 32
+
+    duration = librosa.get_duration(y=y, sr=sr)
 
     return {
-        "bpm": float(bpm),
-        "beats": beats.tolist(),
-        "phrase_length": phrase_length,
-        "energy": float(energy),
-        "lufs": float(loudness)
+        "bpm": float(tempo),
+        "beats": beat_times,
+        "phrase_length": float(phrase_length),
+        "energy": energy,
+        "duration": float(duration)
     }

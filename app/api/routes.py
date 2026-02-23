@@ -8,13 +8,18 @@ import uuid
 
 router = APIRouter()
 
+
 @router.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
-    path = await save_file(file)
+    return {"test": "endpoint works"}
 
-    result = analyze_track(path)
+# @router.post("/analyze")
+#async def analyze(file: UploadFile = File(...)):
+  #  path = await save_file(file)
 
-    return result
+ #   result = analyze_track(path)
+
+#    return result 
 
 @router.post("/upload")
 async def upload_tracks(files: list[UploadFile] = File(...)):

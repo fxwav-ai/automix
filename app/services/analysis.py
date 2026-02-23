@@ -2,7 +2,7 @@ import librosa
 import numpy as np
 
 def analyze_track(path):
-    y, sr = librosa.load(path, sr=None)
+    y, sr = librosa.load(path, sr=22050, mono=True, duration=120)
 
     # BPM detection
     tempo, beats = librosa.beat.beat_track(y=y, sr=sr)

@@ -8,13 +8,33 @@ import uuid
 
 router = APIRouter()
 
+
 @router.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
-    path = await save_file(file)
+    try:
+        # Save file using your storage service
+        path = await save_file(file)
 
-    result = analyze_track(path)
+        # Run analysis service
+        result = analyze_track(path)
 
-    return result
+        # Cleanup temp file
+        import os
+        if os.path.exists(path):
+            os.remove(path)
+
+        return result
+
+    except Exception as e:
+        return {"error": str(e)}
+    
+# @router.post("/analyze")
+#async def analyze(file: UploadFile = File(...)):
+  #  path = await save_file(file)
+
+ #   result = analyze_track(path)
+
+#    return result 
 
 @router.post("/upload")
 async def upload_tracks(files: list[UploadFile] = File(...)):

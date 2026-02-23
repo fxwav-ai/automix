@@ -11,8 +11,23 @@ router = APIRouter()
 
 @router.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
-    return {"test": "endpoint works"}
+    try:
+        # Save file using your storage service
+        path = await save_file(file)
 
+        # Run analysis service
+        result = analyze_track(path)
+
+        # Cleanup temp file
+        import os
+        if os.path.exists(path):
+            os.remove(path)
+
+        return result
+
+    except Exception as e:
+        return {"error": str(e)}
+    
 # @router.post("/analyze")
 #async def analyze(file: UploadFile = File(...)):
   #  path = await save_file(file)
